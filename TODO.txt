@@ -1,0 +1,1 @@
+von FGNET Face detection durchfuehren und dann den rest davon pro bild abspeichern in 350x350 und in 150x150 von Keras verwenden
