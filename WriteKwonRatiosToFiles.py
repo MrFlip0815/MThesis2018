@@ -1,5 +1,12 @@
-
-# landmark stuff
+##
+## 1) Read Images
+## 2) Read Annotations
+## 3) Find Faces
+## 4) Detect Landmarks
+## 5) Calculate Top of Head and add to Landmarks
+## 6) Calculate KWON Ratios from Landmarks
+## 7) Save Kwon Ratios to CSV for later use 
+## 
 
 import numpy as np
 import json
@@ -18,12 +25,11 @@ import csv
 
 import Headstimation as head
 
-# use trunc pictures - they are still in same aspect ratio
+# Use trunc pictures - they are still in same aspect ratio
 image_folder_CK = os.path.join('imageSets/CGPlus/trunc')
 image_folder_FG = os.path.join('imageSets/FGNet/trunc')
 image_folder_FEI = os.path.join('imageSets/FEI/trunc')
 image_folder_CalTech = os.path.join('imageSets/CalTech/trunc')
-
 
 # Setup DLIB and OpenCV
 cascade_path = os.path.join("dlibstuff/","haarcascade_frontalface_default.xml")
@@ -32,24 +38,24 @@ kwon_ratios = [True,True,True,True,True]
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
 
 faceCascade = cv2.CascadeClassifier(cascade_path)  
-# create the landmark predictor  
+# Create the landmark predictor  
 predictor = dlib.shape_predictor(predictor_path)  
 
 def GetFilesFromFolder(folder):
 	return [f for f in listdir(folder) if isfile(join(folder, f))] # only use subset for testing purpose for now
 
-# these are the image files 
+# There are the image files 
 files_CK = GetFilesFromFolder(image_folder_CK)
 files_FG = GetFilesFromFolder(image_folder_FG)
 files_FEI = GetFilesFromFolder(image_folder_FEI)
 files_CalTech = GetFilesFromFolder(image_folder_CalTech)
-# we also need the annotation files 
+# We also need the annotation files 
 annotation_CK = os.path.join('imageSets/CGPlus','annotation.csv')
 annotation_FG = os.path.join('imageSets/FGNet','annotation.csv')
 annotation_FEI = os.path.join('imageSets/FEI','FEIAnnotation.csv')
 annotation_CalTech = os.path.join('imageSets/CalTech','CalTechAnnotation.csv') # TODO TODO TODO
 
-# define the output CSV files
+# Define the Output CSV Files
 
 CK_KWON_female_csv = os.path.join('imageSets/CGPlus','CK.KWON.female.csv')
 CK_KWON_male_csv = os.path.join('imageSets/CGPlus','CK.KWON.male.csv')
@@ -62,7 +68,6 @@ FEI_KWON_male_csv = os.path.join('imageSets/FEI','FEI.KWON.male.csv')
 
 CalTech_KWON_female_csv = os.path.join('imageSets/CalTech','CalTech.KWON.female.csv')
 CalTech_KWON_male_csv = os.path.join('imageSets/CalTech','CalTech.KWON.male.csv')
-
 
 # load Annotation CSV FG
 annotation_data_FG = []
@@ -85,24 +90,19 @@ with open (annotation_CK,'r') as csvReader:
 	for row in spamreader:
 		annotation_data_CK.append(row)
 
-# TODO CalTech
+# load Annotation CSV CalTech
 annotation_data_CalTech = []
 with open (annotation_CalTech,'r') as csvReader:
 	spamreader = csv.reader(csvReader,delimiter=',')
 	for row in spamreader:
 		annotation_data_CalTech.append(row)
 ##
-
-
-
 def get_simple_landmarks(image):
 
 	faces = faceCascade.detectMultiScale(image, scaleFactor=1.3, minNeighbors=4, minSize=(100, 100), flags=cv2.CASCADE_SCALE_IMAGE)
 
 	if len(faces) == 0:
 		return []
-
-	
 
 	for (x,y,w,h) in faces:
 		dlib_rect = dlib.rectangle( np.long(x),np.long(y),np.long(x+w),np.long(y+h))
@@ -135,113 +135,9 @@ def get_simple_landmarks(image):
 	#print(landmarks)
 
 	return landmarks # TODOOOOOOOOOOO - return additional parameter as TOP OF HEAD AND REDO EVERYTHING !!!!!!!!!!!!!!!
-
-######################################################
-# Windows Version for KWON
-######################################################
-class KwonRatiosWindows(object):
-	def __init__(self, landmarks):
-		self.landmarks = landmarks
-		self.k_list = [True,True,True,True,True]
-
-	def getPointX(self,n):
-		return self.landmarks.item(n,0)
-	def getPointY(self,n):
-		return self.landmarks.item(n,1)
-	def getAvg(self,a,b):
-		return (a+b)/2
-	def getDistance(self,a,b):
-		if(b>a):
-			return b-a
-		else:
-			return a-b
-	# average y value of both eyes
-	def eyes_y_avg(self):
-		eye_left_y = self.getAvg(self.getPointY(40),self.getPointY(38))
-		eye_right_y = self.getAvg(self.getPointY(46),self.getPointY(44))
-		eye_avg_y = self.getAvg(eye_left_y,eye_right_y)
-		return eye_avg_y
-	def eye_x_avg(self):
-		eye_left_x = self.getAvg(self.getPointX(36),self.getPointX(39))
-		eye_right_x = self.getAvg(self.getPointX(45),self.getPointX(42))
-		eye_avg_x = self.getAvg(eye_left_x,eye_right_x)
-		return eye_avg_x
-	# distance between left eye and right eye center 
-	def eyeDistance(self):
-		eye_left_x = self.getAvg(self.getPointX(36),self.getPointX(39))
-		eye_right_x = self.getAvg(self.getPointX(45),self.getPointX(42))
-		return self.getDistance(eye_right_x,eye_left_x)
-	# distance between y average of eyese and nose bottom
-	def eyeNoseDistance(self):
-		eyes_y = self.eyes_y_avg()
-		nose_y = self.getPointY(33)
-		return self.getDistance(eyes_y,nose_y)
-	# Y value of mouth center:: TODO SUBJECT TO EVALUATE 60<->62 or 48<->54 or avg of both --- also 61,62,63 upper lip 
-	def mouthMiddle_Y(self):
-		return self.getAvg(self.getPointY(60),self.getPointY(64))
-	def mouthMiddle_X(self):
-		return self.getAvg(self.getPointX(60),self.getPointX(64))
-
-	def chinY(self):
-		return self.getPointY(8)
-	def chinX(self):
-		return self.getPointX(8)
-
-	# Y eye to mouth distance
-	def eyeMouthDistance(self):
-		eyes_y = self.eyes_y_avg()
-		mouth_y = self.mouthMiddle_Y()
-		return self.getDistance(eyes_y,mouth_y)
-	def eyeChinDistance(self):
-		eyes_y = self.eyes_y_avg()
-		chin = self.chinY()
-		return self.getDistance(eyes_y,chin)
-	
-	# Kwon Ratio 1 
-	def kwonRatio1(self):
-		return self.eyeDistance()/self.eyeNoseDistance()
-	# Kwon Ratio 2 
-	def kwonRatio2(self):
-		return self.eyeDistance()/self.eyeMouthDistance()
-	# Kwon Ratio 3 
-	def kwonRatio3(self):
-		return self.eyeDistance()/self.eyeChinDistance()
-	# Kwon Ratio 4 
-	def kwonRatio4(self):
-		return self.eyeNoseDistance()/self.eyeMouthDistance()
-	# Kwon Ratio 5
-	def kwonRatio5(self):
-		return self.eyeMouthDistance()/self.eyeChinDistance()
-	# returns a JSON document with 5 Kwon Ratios and the landmarks
-	def getKwonJson(self):
-		return json.dumps({"landmarks":self.landmarks.tolist() ,"ratio1":self.kwonRatio1(),"ratio2":self.kwonRatio2(),"ratio3":self.kwonRatio3(),"ratio4":self.kwonRatio4(),"ratio5":self.kwonRatio5()})
-
-	def getKwonMouth(self):
-		return [self.mouthMiddle_X(),self.mouthMiddle_Y()]
-	def getKwonLeftEye(self):
-		return [self.getAvg(self.getPointX(36),self.getPointX(39)),self.getAvg(self.getPointY(40),self.getPointY(38))]
-	def getKwonRightEye(self):
-		return [self.getAvg(self.getPointX(45),self.getPointX(42)),self.getAvg(self.getPointY(46),self.getPointY(44))]
-	def getKwonChin(self):
-		return [self.chinX(),self.chinY()]
-	def getKwonNose(self):
-		return [self.getPointX(33),self.getPointY(33)]
-	def getBetweenEyes(self):
-		return [self.eye_x_avg(),self.eyes_y_avg()]
-	def kwonALL(self):
-		ret_list=[]
-		if self.k_list[0] == True:
-			ret_list.append(self.kwonRatio1())
-		if self.k_list[1] == True:
-			ret_list.append(self.kwonRatio2())
-		if self.k_list[2] == True:
-			ret_list.append(self.kwonRatio3())
-		if self.k_list[3] == True:
-			ret_list.append(self.kwonRatio4())
-		if self.k_list[4] == True:
-			ret_list.append(self.kwonRatio5())	
-		return ret_list
-
+##
+## New and Correct KWON Ratios 
+##
 class KwonRatiosWindowsNEWNEW(object):
 	def __init__(self, landmarks):
 		self.landmarks = landmarks
@@ -300,7 +196,6 @@ class KwonRatiosWindowsNEWNEW(object):
 		head_y = self.HeadY()
 		return self.getDistance(eyes_y,head_y)
 
-
 	# Y eye to mouth distance
 	def eyeMouthDistance(self):
 		eyes_y = self.eyes_y_avg()
@@ -331,7 +226,6 @@ class KwonRatiosWindowsNEWNEW(object):
 	# Kwon Ratio 5
 	def kwonRatio5(self):
 		return self.eyeHeadDistance()/self.chinHeadDistance()
-
 
 	# returns a JSON document with 5 Kwon Ratios and the landmarks
 	def getKwonJson(self):
@@ -394,7 +288,7 @@ def GetCV2Image(folder, file):
 	image = cv2.imread(os.path.join(folder,file))
 	return image
 
-######
+###### OUTPUT SECTION #################################################
 
 kwon_CK_male = []
 kwon_CK_female = []
@@ -405,23 +299,23 @@ kwon_FEI_female = []
 kwon_CalTech_female = []
 kwon_CalTech_male = []
 
-#for f in files_CK:
-#	img = GetCV2Image(image_folder_CK,f)
-#	marks = get_simple_landmarks(img)
-#	gender = getGenderForSubstringCK((f.split('_'))[0])
-#	kwon_data = KwonRatiosWindows(marks).kwonALL()
+for f in files_CK:
+	img = GetCV2Image(image_folder_CK,f)
+	marks = get_simple_landmarks(img)
+	gender = getGenderForSubstringCK((f.split('_'))[0])
+	kwon_data = KwonRatiosWindowsNEWNEW(marks).kwonALL()
 
-#	if gender == 'male':
-#		tmp = []
-#		tmp.extend([f,gender])
-#		tmp.extend(kwon_data)
-#		kwon_CK_male.append(tmp)
-#	else:
-#		tmp = []
-#		tmp.extend([f,gender])
-#		tmp.extend(kwon_data)
-#		kwon_CK_female.append(tmp)
-#	print("CK+ File: {0} {1}".format(f,gender))
+	if gender == 'male':
+		tmp = []
+		tmp.extend([f,gender])
+		tmp.extend(kwon_data)
+		kwon_CK_male.append(tmp)
+	else:
+		tmp = []
+		tmp.extend([f,gender])
+		tmp.extend(kwon_data)
+		kwon_CK_female.append(tmp)
+	print("CK+ File: {0} {1}".format(f,gender))
 
 for f in files_FG:
 	img = GetCV2Image(image_folder_FG,f)
@@ -429,7 +323,7 @@ for f in files_FG:
 	if marks == []: # skip images with no landmarks
 		continue
 	gender = getGenderForSubstringFG((f.split('.'))[0][0:3])
-	kwon_data = KwonRatiosWindows(marks).kwonALL()
+	kwon_data = KwonRatiosWindowsNEWNEW(marks).kwonALL()
 	if gender == 'male':
 		tmp = []
 		tmp.extend([f,gender])
@@ -442,56 +336,54 @@ for f in files_FG:
 		kwon_FG_female.append(tmp)
 	print("FG File: {0} {1}".format(f,gender))
 
-#for f in files_FEI:
-#	img = GetCV2Image(image_folder_FEI,f)
-#	marks = get_simple_landmarks(img)
-#	if marks == []: # skip images with no landmarks
-#		continue
-#	gender = getGenderForSubstringFEI((f.split('.'))[0])
-#	kwon_data = KwonRatiosWindows(marks).kwonALL()
-#	if gender == 'male':
-#		tmp = []
-#		tmp.extend([f,gender])
-#		tmp.extend(kwon_data)
-#		kwon_FEI_male.append(tmp)
-#	else:
-#		tmp = []
-#		tmp.extend([f,gender])
-#		tmp.extend(kwon_data)
-#		kwon_FEI_female.append(tmp)
-#	print("FEI File: {0} {1}".format(f,gender))
+for f in files_FEI:
+	img = GetCV2Image(image_folder_FEI,f)
+	marks = get_simple_landmarks(img)
+	if marks == []: # skip images with no landmarks
+		continue
+	gender = getGenderForSubstringFEI((f.split('.'))[0])
+	kwon_data = KwonRatiosWindowsNEWNEW(marks).kwonALL()
+	if gender == 'male':
+		tmp = []
+		tmp.extend([f,gender])
+		tmp.extend(kwon_data)
+		kwon_FEI_male.append(tmp)
+	else:
+		tmp = []
+		tmp.extend([f,gender])
+		tmp.extend(kwon_data)
+		kwon_FEI_female.append(tmp)
+	print("FEI File: {0} {1}".format(f,gender))
 
-#for f in files_CalTech:
-#	pass
-#	img = GetCV2Image(image_folder_CalTech,f)
-#	marks = get_simple_landmarks(img)
-#	if marks == []: # skip images with no landmarks
-#		continue
-#	gender = getGenderForSubstringCalTech((f.split('.'))[0])
-#	print(f)
-#	print(gender)
-#	kwon_data = KwonRatiosWindowsNEWNEW(marks).kwonALL()
-#	if gender == 'male':
-#		tmp = []
-#		tmp.extend([f,gender])
-#		tmp.extend(kwon_data)
-#		kwon_CalTech_male.append(tmp)
-#	else:
-#		tmp = []
-#		tmp.extend([f,gender])
-#		tmp.extend(kwon_data)
-#		kwon_CalTech_female.append(tmp)
-#	print("CakTech File: {0} {1}".format(f,gender))
+for f in files_CalTech:
+	pass
+	img = GetCV2Image(image_folder_CalTech,f)
+	marks = get_simple_landmarks(img)
+	if marks == []: # skip images with no landmarks
+		continue
+	gender = getGenderForSubstringCalTech((f.split('.'))[0])
+	kwon_data = KwonRatiosWindowsNEWNEW(marks).kwonALL()
+	if gender == 'male':
+		tmp = []
+		tmp.extend([f,gender])
+		tmp.extend(kwon_data)
+		kwon_CalTech_male.append(tmp)
+	else:
+		tmp = []
+		tmp.extend([f,gender])
+		tmp.extend(kwon_data)
+		kwon_CalTech_female.append(tmp)
+	print("CakTech File: {0} {1}".format(f,gender))
 
 # CK Female
-#with open(CK_KWON_female_csv, 'w', newline='') as csvFile:
-#    wr = csv.writer(csvFile)
-#    wr.writerows(kwon_CK_female)
-## CK Male
-#with open(CK_KWON_male_csv, 'w', newline='') as csvFile:
-#    wr = csv.writer(csvFile)
-#    wr.writerows(kwon_CK_male)
-# FG Female
+with open(CK_KWON_female_csv, 'w', newline='') as csvFile:
+    wr = csv.writer(csvFile)
+    wr.writerows(kwon_CK_female)
+# CK Male
+with open(CK_KWON_male_csv, 'w', newline='') as csvFile:
+    wr = csv.writer(csvFile)
+    wr.writerows(kwon_CK_male)
+#FG Female
 with open(FG_KWON_female_csv, 'w', newline='') as csvFile:
     wr = csv.writer(csvFile)
     wr.writerows(kwon_FG_female)
@@ -499,21 +391,20 @@ with open(FG_KWON_female_csv, 'w', newline='') as csvFile:
 with open(FG_KWON_male_csv, 'w', newline='') as csvFile:
     wr = csv.writer(csvFile)
     wr.writerows(kwon_FG_male)
-## FEI female
-#with open(FEI_KWON_female_csv, 'w', newline='') as csvFile:
-#    wr = csv.writer(csvFile)
-#    wr.writerows(kwon_FEI_female)
-#with open(FEI_KWON_male_csv, 'w', newline='') as csvFile:
-#    wr = csv.writer(csvFile)
-#    wr.writerows(kwon_FEI_male)
-
-#with open(CalTech_KWON_female_csv, 'w', newline='') as csvFile:
-#    wr = csv.writer(csvFile)
-#    wr.writerows(kwon_CalTech_female)
-
-#with open(CalTech_KWON_male_csv, 'w', newline='') as csvFile:
-#    wr = csv.writer(csvFile)
-#    wr.writerows(kwon_CalTech_male)
+# FEI female
+with open(FEI_KWON_female_csv, 'w', newline='') as csvFile:
+    wr = csv.writer(csvFile)
+    wr.writerows(kwon_FEI_female)
+with open(FEI_KWON_male_csv, 'w', newline='') as csvFile:
+    wr = csv.writer(csvFile)
+    wr.writerows(kwon_FEI_male)
+#  CalTech
+with open(CalTech_KWON_female_csv, 'w', newline='') as csvFile:
+    wr = csv.writer(csvFile)
+    wr.writerows(kwon_CalTech_female)
+with open(CalTech_KWON_male_csv, 'w', newline='') as csvFile:
+    wr = csv.writer(csvFile)
+    wr.writerows(kwon_CalTech_male)
 
 #write all the data to CSV in their corresponding folder
 
