@@ -20,6 +20,10 @@ image_folder_CK = os.path.join('imageSets/CGPlus/')
 image_folder_FG = os.path.join('imageSets/FGNet/')
 image_folder_FEI = os.path.join('imageSets/FEI/')
 image_folder_CalTech = os.path.join('imageSets/CalTech')
+
+image_folder_full = os.path.join('full')
+
+
 import pandas as pd
 
 color_male = 'cornflowerblue'
@@ -33,10 +37,10 @@ kwon=[]
 #data_female = os.path.join(chosenFolder,"FEI.KWON.LOBO.female.csv")
 #data_male = os.path.join(chosenFolder,"FEI.KWON.LOBO.male.csv")
 
-chosenFolder = image_folder_CK
-chartHeader = "CK"
-data_female = os.path.join(chosenFolder,"CK.KWON.LOBO.female.csv")
-data_male = os.path.join(chosenFolder,"CK.KWON.LOBO.male.csv")
+#chosenFolder = image_folder_CK
+#chartHeader = "CK"
+#data_female = os.path.join(chosenFolder,"CK.KWON.LOBO.female.csv")
+#data_male = os.path.join(chosenFolder,"CK.KWON.LOBO.male.csv")
 
 #chosenFolder = image_folder_FG
 #chartHeader = "FGNet"
@@ -48,6 +52,32 @@ data_male = os.path.join(chosenFolder,"CK.KWON.LOBO.male.csv")
 #data_female = os.path.join(chosenFolder,"CalTech.KWON.LOBO.female.csv")
 #data_male = os.path.join(chosenFolder,"CalTech.KWON.LOBO.male.csv")
 
+chosenFolder = image_folder_full
+chartHeader = "full"
+csv_full = os.path.join(chosenFolder,"KWON.LOBO.FULL.csv")
+
+
+
+def DrawFullKwonLobo(list):
+	if sys.platform == 'win32':
+		data_full = pd.read_csv(csv_full, 
+					names = [
+					"filename",
+					"gender",
+					"k1", 
+					"k2",
+					"k3", 
+					"k4", 
+					"k5",
+					"k6"
+					])
+		flag_male = data_full["gender"] == 'male'
+		data_male = data_full[flag_male]
+
+		flag_female = data_full["gender"] == 'female'
+		data_female = data_full[flag_female]
+
+		PlotKwonRatiosForDataSet(data_female,data_male,list,chartHeader)
 
 def DrawKwonLobo6(list):
 	if sys.platform == 'win32':
@@ -75,7 +105,7 @@ def DrawKwonLobo6(list):
 					])
 	PlotKwonRatiosForDataSet(csv_fem,csv_mal,list,chartHeader)
 
-	
+
 
 #############################
 
@@ -123,5 +153,7 @@ def PlotKwonRatiosForDataSet(data_female, data_male, kwon_list, name_dataset):
 #PlotKwonRatiosForDataSet(csv_fem,csv_mal,["k1","k2","k3","k4","k5"],"CK+")
 # KWON LOBO 6
 
-DrawKwonLobo6(["k1","k2","k3","k4","k5","k6"])
+#DrawKwonLobo6(["k1","k2","k3","k4","k5","k6"])
+
+DrawFullKwonLobo(["k1","k2","k3","k4","k5","k6"])
 #DrawHybrid5()
