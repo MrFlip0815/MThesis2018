@@ -21,6 +21,7 @@ def CalculateNoseAngle(shape):
 
 	noseangle = 0
 	#noseangle = int(np.arctan((ylist[27]-ylist[30])/(xlist[30]-xlist[27]))*180/np.pi)
+
 	if xlist[30] == xlist[27]:
 		noseangle = 0
 	else:

@@ -24,7 +24,7 @@ import math
 import scipy as sp
 
 # Where to take the images From
-input_folder_CG = os.path.join('imageSets/FGNet/trunc')
+input_folder_CG = os.path.join('imageSets/CalTech/trunc')
 
 IMAGE_SIZE_X = 350
 IMAGE_SIZE_Y = 350
@@ -76,7 +76,17 @@ def CalculateNoseAngle(shape):
 	else:
 		noseangle = np.arcsin((xlist[30]-xlist[27])/(ylist[27]-ylist[30]))*180/np.pi
 
-	return noseangle
+
+	#print("currAngle: {0}".format(noseangle))
+
+	y_eyes = (ylist[38]+ylist[40])/2 - (ylist[44]+ylist[46])/2
+	eye_distance = (xlist[44]+xlist[46])/2 - (xlist[38]+xlist[40])/2 
+	newAngle = np.arcsin(y_eyes/eye_distance)*180/np.pi
+	#print("eye_y {0}".format(y_eyes))
+	#print("distance: {0}".format(eye_distance))
+	#print("new_angle: {0}".format(newAngle))
+
+	return -newAngle
 
 def interpolate_pixels_along_line(x0, y0, x1, y1):
     """Uses Xiaolin Wu's line algorithm to interpolate all of the pixels along a
@@ -219,10 +229,13 @@ def Do():
 	for file in GetFilesFromFolder(input_folder_CG):
 		img = cv2.imread(os.path.join(input_folder_CG,file),0)
 
+		show68Image = img.copy()
+		showRectImage = img.copy()
+
 		#Step 1 & 2: Face Detection and Landmark Extraction
 		faceDetectionImage,faceRectangle,landmarks = FindFacesInImage(img)
 		noseAngle = CalculateNoseAngle(landmarks)
-		print(noseAngle)
+		
 
 		#Step 3: Edge Detection
 		edgesImage = PerformEdgeDetection(img)
@@ -233,6 +246,8 @@ def Do():
 
 		#Step4 Show all interesting Points for Kwon or Vank in Image
 		edgesImage = cv2.rectangle(edgesImage,(faceRectangle.left(),faceRectangle.top()),(faceRectangle.right(),faceRectangle.bottom()), color = (255, 0, 0))
+		showRectImage = cv2.rectangle(showRectImage,(faceRectangle.left(),faceRectangle.top()),(faceRectangle.right(),faceRectangle.bottom()), color = (255, 0, 0))
+
 		StartX = round((landmarks.item(22,0)+landmarks.item(21,0))/2)
 		StartY = round((landmarks.item(22,1)+landmarks.item(21,1))/2)
 		endPoint = round(CalculateEndpoint(StartX,StartY,noseAngle))
@@ -269,6 +284,8 @@ def Do():
 			# annotate the positions
 			cv2.putText(edgesImage, str(idx), pos,  fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale = 0.4,  color = (0, 0, 255))
 			cv2.circle(edgesImage, pos, 3, color = (0, 255, 255))  # draw points on the landmark positions
+			cv2.putText(show68Image, str(idx), pos,  fontFace = cv2.FONT_HERSHEY_SIMPLEX, fontScale = 0.4,  color = (0, 0, 255))
+			cv2.circle(show68Image, pos, 3, color = (0, 255, 255))  # draw points on the landmark positions
 
 		#Step5 Write all these Results into CSV file with Annotation in Mind
 	
@@ -280,7 +297,8 @@ def Do():
 		#plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
 		#plt.show()
 
-		window = cv2.imshow("test",edgesImage)
+		window = cv2.imshow("test",show68Image)
+		#window = cv2.imshow("test",show68Image)
 		cv2.waitKey(0);
 		cv2.destroyAllWindows()
 

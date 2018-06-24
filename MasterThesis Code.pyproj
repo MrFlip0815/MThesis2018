@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{2949f4cd-1e52-4958-ae1e-7212ab1ecdd9}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>WriteKwonRatiosToFiles.py</StartupFile>
+    <StartupFile>WriteAllRatiosToFiles.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -34,10 +34,16 @@
     <Compile Include="Charts.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="KerasTests.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PaperTest.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="TopOfHeadStandalone.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="WriteKwonRatiosToFiles.py">
+    <Compile Include="WriteAllRatiosToFiles.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Test.py">
