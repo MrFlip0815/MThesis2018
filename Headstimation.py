@@ -297,7 +297,7 @@ def Do():
 		#plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
 		#plt.show()
 
-		window = cv2.imshow("test",show68Image)
+		window = cv2.imshow("test",edgesImage)
 		#window = cv2.imshow("test",show68Image)
 		cv2.waitKey(0);
 		cv2.destroyAllWindows()

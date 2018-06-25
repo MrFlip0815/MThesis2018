@@ -24,12 +24,24 @@ from os.path import isfile, join
 import csv
 import Headstimation as head
 
+
 # Use trunc pictures - they are still in same aspect ratio
 #image_folder_CK = os.path.join('imageSets/CGPlus/trunc')
 image_folder_CK = os.path.join('imageSets/CGPlus/trunc_ratio')
 image_folder_FG = os.path.join('imageSets/FGNet/trunc_ratio')
 image_folder_FEI = os.path.join('imageSets/FEI/trunc_ratio')
 image_folder_CalTech = os.path.join('imageSets/CalTech/trunc_ratio')
+
+#
+#
+# CONFIGURATION SETUP OVERWRITE SECTION
+	
+FEI_OVERWRITE_CSV = os.path.join(image_folder_FEI,'OUT.MANUAL.1529952421.1209042.csv')
+FEI_OVERWRITE = True
+	
+#
+#
+#
 
 image_folder_combo_out = os.path.join('data')
 image_folder_full_out = os.path.join('full')
@@ -113,7 +125,6 @@ FGNET_VANK_combo_csv =  os.path.join(image_folder_combo_out,'FGNET.VANK.combo.cs
 FEI_VANK_combo_csv =  os.path.join(image_folder_combo_out,'FEI.VANK.combo.csv')
 CalTech_VANK_combo_csv =  os.path.join(image_folder_combo_out,'CalTech.VANK.combo.csv')
 
-
 # write FULL for each feture method
 
 VANK_FULL_csv = os.path.join(image_folder_full_out,'VANK.FULL.csv')
@@ -147,7 +158,14 @@ with open (annotation_CalTech,'r') as csvReader:
 	spamreader = csv.reader(csvReader,delimiter=',')
 	for row in spamreader:
 		annotation_data_CalTech.append(row)
-##
+# load Overwrite Parameters
+
+overwrite_data_FEI = []
+with open (FEI_OVERWRITE_CSV,'r') as csvReader:
+	spamreader = csv.reader(csvReader,delimiter=',')
+	for row in spamreader:
+		overwrite_data_FEI.append(row)
+
 def get_simple_landmarks(image):
 
 	faces = faceCascade.detectMultiScale(image, scaleFactor=1.3, minNeighbors=4, minSize=(100, 100), flags=cv2.CASCADE_SCALE_IMAGE)
@@ -497,12 +515,33 @@ for f in files_FG:
 for f in files_FEI:
 	img = GetCV2Image(image_folder_FEI,f)
 	marks = get_simple_landmarks(img)
+	#
+	#
+	
+				
+
+	#
+	#
+	#
+	#
 	if marks == []: # skip images with no landmarks
 		continue
+	# OVERWRITE TOH WITH CHOSEN FROM MANUAL
+	xy = KwonRatiosWindowsNEWNEW(marks)
+	
+	if FEI_OVERWRITE == True:
+		for r in overwrite_data_FEI:
+			if r != [] and r[0] == f:
+				print("Overwrite FEI {0} Head ({1},{2})".format(f,r[0],r[1],r[2] ))
+				marks[68,0] = int(r[1]) # value
+				marks[68,1] = int(r[2]) # y value
+				
+
 	gender = getGenderForSubstringFEI((f.split('.'))[0])
 	kwon_data = KwonRatiosWindowsNEWNEW(marks).kwonALL()
 	kwon_lobo_data = KwonRatiosWindowsNEWNEW(marks).kwonLoboALL()
 	vank_data = KwonRatiosWindowsNEWNEW(marks).vankAll()
+
 	if gender == 'male':
 		tmp = []
 		tmp.extend([f,gender])

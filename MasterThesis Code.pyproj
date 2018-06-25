@@ -40,6 +40,9 @@
     <Compile Include="DataSetStatistics.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ManualClassification.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="PaperTest.py">
       <SubType>Code</SubType>
     </Compile>
